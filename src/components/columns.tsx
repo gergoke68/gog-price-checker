@@ -6,9 +6,6 @@ import { Button } from "./ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
 import { countries } from "@/lib/countries";
 
-// Add country names mapping
-const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-
 export type Price = {
   country: string;
   price: number;
@@ -22,7 +19,7 @@ export const columns: ColumnDef<Price>[] = [
     cell: ({ getValue }) => {
       const code = getValue() as string;
       const upperCode = code.toUpperCase();
-      // @ts-ignore - Flags typing issue
+      // @ts-expect-error - Flags typing issue
       const FlagComponent = Flags[upperCode];
       return (
         <div className="text-xl text-center w-[100px]">

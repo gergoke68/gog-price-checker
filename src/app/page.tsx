@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { columns } from "@/components/columns";
 import { DataTable } from "@/components/data-table";
 
@@ -7,7 +7,9 @@ export default function Home() {
   const [url, setUrl] = useState("");
   const [prices, setPrices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errorState, setError] = useState("");
+  
+  const error = useMemo(() => errorState, [errorState]);
 
   const handleCheckPrices = async () => {
     if (!url) return;
@@ -25,7 +27,10 @@ export default function Home() {
       }
 
       setPrices(data);
-    } catch (error) {
+    } catch (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      error
+    ) {
       setError("Network error: Could not connect to the server");
     } finally {
       setIsLoading(false);
@@ -33,33 +38,40 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8 bg-slate-800 text-slate-100">
-      <h1 className="text-6xl font-bold mb-8">GOG Price Checker</h1>
-      <div className="flex flex-col items-center">
-        <div className="flex gap-4 items-center">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter URL"
-            className="border p-2 rounded bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400 w-[400px]"
-          />
-          <button
-            onClick={handleCheckPrices}
-            disabled={isLoading}
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 disabled:opacity-50 whitespace-nowrap"
-          >
-            {isLoading ? "Loading..." : "Check Prices"}
-          </button>
+    <div className="flex flex-col items-center min-h-screen bg-slate-800 text-slate-100">
+      <div className="flex-1 flex flex-col items-center justify-center w-full p-8 gap-8">
+        <h1 className="text-6xl font-bold mb-8">GOG Price Checker</h1>
+        <div className="flex flex-col items-center">
+          <div className="flex gap-4 items-center">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter URL"
+              className="border p-2 rounded bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400 w-[400px]"
+            />
+            <button
+              onClick={handleCheckPrices}
+              disabled={isLoading}
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 disabled:opacity-50 whitespace-nowrap"
+            >
+              {isLoading ? "Loading..." : "Check Prices"}
+            </button>
+          </div>
+          {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
         </div>
-        {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
+
+        {prices.length > 0 && (
+          <div className="w-full max-w-4xl">
+            <DataTable columns={columns} data={prices} />
+          </div>
+        )}
       </div>
 
-      {prices.length > 0 && (
-        <div className="w-full max-w-4xl">
-          <DataTable columns={columns} data={prices} />
-        </div>
-      )}
+      <footer className="text-slate-400 text-sm py-4 w-full text-center border-t border-slate-700">
+        Made with ❤️ by <a href="https://github.com/gergoke68" target="_blank" rel="noopener noreferrer" className="hover:text-slate-300 transition-colors">Gergő Gémes</a>
+      </footer>
     </div>
   );
+
 }
