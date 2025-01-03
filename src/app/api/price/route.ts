@@ -3,9 +3,29 @@ import * as cheerio from "cheerio";
 import { NextResponse } from "next/server";
 import regions from "./regions";
 
+// Cache interface
+interface CacheEntry {
+  timestamp: number;
+  data: PriceData[];
+}
+
+// Cache storage
+const priceCache = new Map<string, CacheEntry>();
+const CACHE_DURATION = 3600000; // 1 hour in milliseconds
+
 interface PriceData {
   country: string;
   price: number;
+}
+
+function normalizeGogUrl(url: string): string {
+  const urlObj = new URL(url);
+  const pathParts = urlObj.pathname.split('/');
+  if (!pathParts.includes('en')) {
+    // Insert 'en' after the first segment (which is empty due to leading slash)
+    pathParts.splice(1, 0, 'en');
+  }
+  return pathParts.join('/');
 }
 
 function checkPrice(
@@ -13,9 +33,10 @@ function checkPrice(
   country: string,
   callback: (err: Error | null, priceData: PriceData | null) => void
 ) {
+  const normalizedPath = normalizeGogUrl(url);
   const options = {
     hostname: "www.gog.com",
-    path: url, // Use the provided URL parameter
+    path: normalizedPath, // Use the normalized URL path
     method: "GET",
     headers: {
       Cookie: "gog_lc=" + country + "_USD_en-US; path=/",
@@ -47,15 +68,35 @@ function checkPrice(
   req.end();
 }
 
+function getCacheKey(url: string): string {
+  // Remove "/en" from URL before generating cache key
+  const normalizedUrl = url.replace(/\/en\//, '/');
+  return `price_${normalizedUrl}`;
+}
+
+function isValidCache(entry: CacheEntry): boolean {
+  return Date.now() - entry.timestamp < CACHE_DURATION;
+}
+
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get("url");
 
   if (!url || !/^https:\/\/www\.gog\.com(\/en)?\/game\/[\w_]+$/.test(url)) {
     return NextResponse.json(
-      { error: "Invalid GOG game URL. Expected format: https://www.gog.com/game/game_name or https://www.gog.com/en/game/game_name" },
+      {
+        error:
+          "Invalid GOG game URL. Expected format: https://www.gog.com/game/game_name or https://www.gog.com/en/game/game_name",
+      },
       { status: 400 }
     );
+  }
+
+  // Check cache first
+  const cacheKey = getCacheKey(url);
+  const cachedData = priceCache.get(cacheKey);
+  if (cachedData && isValidCache(cachedData)) {
+    return NextResponse.json(cachedData.data);
   }
 
   return new Promise((resolve) => {
@@ -71,6 +112,11 @@ export async function GET(request: Request): Promise<NextResponse> {
 
         if (completedRequests === regions.length) {
           if (results.length > 0) {
+            // Store in cache before returning
+            priceCache.set(cacheKey, {
+              timestamp: Date.now(),
+              data: results,
+            });
             resolve(NextResponse.json(results));
           } else {
             resolve(

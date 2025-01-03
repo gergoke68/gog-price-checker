@@ -42,18 +42,18 @@ export default function Home() {
       <div className="flex-1 flex flex-col items-center justify-center w-full p-8 gap-8">
         <h1 className="text-6xl font-bold mb-8">GOG Price Checker</h1>
         <div className="flex flex-col items-center">
-          <div className="flex gap-4 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 items-center">
             <input
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="Enter URL"
-              className="border p-2 rounded bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400 w-[400px]"
+              className="border p-2 rounded bg-slate-700 border-slate-600 text-slate-100 placeholder:text-slate-400 w-full sm:w-[400px]"
             />
             <button
               onClick={handleCheckPrices}
               disabled={isLoading}
-              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 disabled:opacity-50 whitespace-nowrap"
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 disabled:opacity-50 whitespace-nowrap w-full sm:w-auto"
             >
               {isLoading ? "Loading..." : "Check Prices"}
             </button>
